@@ -149,7 +149,7 @@ void Black()
 void TurnLeft()
 {
   counterLL += 1;
-  delay(200);         //  boost delay 20211209  xin
+  delay(100) ; 
   int M = analogRead(A2);
   int L = analogRead(A3);
   if(M > 40)       // 前面有路  
@@ -166,7 +166,7 @@ void TurnLeft()
   digitalWrite(L_direction,LOW);
   analogWrite(RightWheel_Pin,right_motor_speed);  //right_motor_speed
   analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
-  delay(200);    // boost delay  20211209     xin 
+  delay(150);    // boost delay  20211209     xin 
    while(1)
    {
      int mid = analogRead(A2);
@@ -187,6 +187,8 @@ void TurnRight()
     {*/
    
    //2021/12/7  caesar
+   
+  /* 
   if(count_first_quick_left_trun== true){ 
 
     digitalWrite(R_direction,LOW);  
@@ -195,18 +197,18 @@ void TurnRight()
       analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
     count_first_quick_left_trun = false  ; 
     delay(100) ; 
+  
 
-
-    digitalWrite(R_direction,LOW);  
-       digitalWrite(L_direction,LOW);
-       analogWrite(RightWheel_Pin,0);                  //right_motor_speed
-       analogWrite(LeftWheel_Pin,left_motor_speed);    //left_motor_speed
-       delay(50);
+//    digitalWrite(R_direction,LOW);  
+//       digitalWrite(L_direction,LOW);
+//       analogWrite(RightWheel_Pin,0);                  //right_motor_speed
+//       analogWrite(LeftWheel_Pin,left_motor_speed);    //left_motor_speed
+//       delay(50);
        
 
   }// the frist half circle check 
 
-
+*/
 
 
   counterRR += 1;
@@ -277,6 +279,35 @@ void quickRight()
   delay(1000);
 }
 
+// add the shache using only SMR  20211209 caesar
+//The code below is using for picture C  first ban_yuan 
+
+
+void SMR_shache(){
+
+  if(count_first_quick_left_trun== true){ 
+
+      digitalWrite(R_direction,LOW);  
+      digitalWrite(L_direction,LOW);
+      analogWrite(RightWheel_Pin,0);  //right_motor_speed
+      analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
+      count_first_quick_left_trun = false  ; 
+      delay(100) ; 
+
+  }
+
+else{
+
+motorcontrol() ; 
+
+
+
+
+}
+
+
+
+}
 
 //----------避障------------------------
 /*long cm(int trig, int echo) 
@@ -353,7 +384,7 @@ void SC()
        motorcontrol();
       break;
     case 8: /*SMR*/
-       motorcontrol();
+       SMR_shache() ;   // 20211210 caesar
       break;
     case 6: /*SM+SML*/
        motorcontrol();
