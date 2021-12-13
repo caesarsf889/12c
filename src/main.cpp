@@ -9,7 +9,7 @@ int trig = 13 , echo = 12;
 float Kp=13,Ki=0.06,Kd=2;
 float error=0, P=0, I=0, D=0, PID_value=0;
 float previous_error=0, previous_I=0;
-int initial_motor_speed=68;
+int initial_motor_speed=72;
 float right_motor_speed;
 float left_motor_speed;
 //-------PID--------
@@ -25,9 +25,17 @@ int SMR;
 int SR;
 int counterLL=0;
 int counterRR=0;  
-int counterBB=0;
+int counterBB=0; //看到全黑
+
+
+int  LED_ON = 9 ; 
 
 bool count_first_quick_left_trun =  false  ; 
+bool count_hard_left_turn = false ;
+bool forward_check = true  ; 
+void SML_shache() ; 
+
+void All_white() ; 
 
 
 //-------IRsensor靈敏度調整--------
@@ -109,6 +117,7 @@ void Forward()
 
 void Black()
 {
+  //digitalWrite(LED_ON,HIGH) ;
   counterBB += 1;
   if(counterBB == 3)
   {digitalWrite(R_direction,LOW);  
@@ -123,6 +132,10 @@ void Black()
        break;  
    }
    }
+
+  
+
+
    else if(counterBB == 4)
    {
       digitalWrite(R_direction,LOW);  
@@ -144,10 +157,12 @@ void Black()
            break;  
                }
    }
+  // digitalWrite(LED_ON,LOW) ;
 }
 
 void TurnLeft()
 {
+  digitalWrite(LED_ON,HIGH) ;   //20211211 caesar
   counterLL += 1;
   delay(100) ; 
   int M = analogRead(A2);
@@ -160,8 +175,46 @@ void TurnLeft()
   {
     Forward();
   }
+
+  // 修正閃燈但無快速左轉  20211211 caesar
+  else if(counterRR >=9){
+
+    count_hard_left_turn = true ; 
+
+
+  }
+  else if(count_hard_left_turn ==true){
+
+  digitalWrite(R_direction,LOW) ; 
+  digitalWrite(L_direction,LOW) ; 
+  analogWrite(RightWheel_Pin, 0 ) ; 
+  analogWrite(LeftWheel_Pin,0) ; 
+  count_hard_left_turn = false ; 
+
+
+  digitalWrite(R_direction,LOW);  
+  digitalWrite(L_direction,LOW);
+  analogWrite(RightWheel_Pin,right_motor_speed);  //right_motor_speed
+  analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
+  delay(150);    // boost delay  20211209     xin 
+   while(1)
+   {
+     int mid = analogRead(A2);
+     if(mid > 40)
+       break;  
+   }
+
+
+
+
+
+  }
   else
   {
+  
+  
+
+
   digitalWrite(R_direction,LOW);  
   digitalWrite(L_direction,LOW);
   analogWrite(RightWheel_Pin,right_motor_speed);  //right_motor_speed
@@ -174,10 +227,13 @@ void TurnLeft()
        break;  
    }
   }
+ digitalWrite(LED_ON,LOW) ;
+
 }
 
 void TurnRight()
 { 
+  
  /*counter+=1;
   if(counter=4)
   { 
@@ -210,10 +266,17 @@ void TurnRight()
 
 */
 
+//Problem 20211211 caesar  counterRR 失效 要忽略的直接進行右轉
 
   counterRR += 1;
-  if(counterRR == 7) //
-  {Forward();delay(100);}
+  if(  counterLL >=4  && counterRR>5 && forward_check==true)   //原版xin 的counterRR 是7  20211211 caesar
+    {
+    digitalWrite(LED_ON,HIGH) ;   
+    Forward();
+    delay(100);
+    forward_check = false  ;
+    digitalWrite(LED_ON,LOW) ; 
+    }
 /*
   else if(counterRR == 3)
   {
@@ -237,16 +300,23 @@ void TurnRight()
   }
 */
   else{
+
+      //digitalWrite(LED_ON,HIGH) ; //20211211 caesar
+
        digitalWrite(R_direction,LOW);  
        digitalWrite(L_direction,LOW);
        analogWrite(RightWheel_Pin,0);                  //right_motor_speed
-       analogWrite(LeftWheel_Pin,left_motor_speed);    //left_motor_speed
+       
+       //出灣卡住
+       analogWrite(LeftWheel_Pin,left_motor_speed+5);    //left_motor_speed 
        delay(150);
        while(1){
          int mid = analogRead(A2);
          if(mid > 40)
            break;  
                }
+
+               //digitalWrite(LED_ON,LOW) ;   //20211211 caesar 
   }
      }
 
@@ -285,7 +355,10 @@ void quickRight()
 
 void SMR_shache(){
 
+  // if 快速左轉有跑 
   if(count_first_quick_left_trun== true){ 
+
+      //digitalWrite(LED_3,HIGH) ;   //2021211 caesar 
 
       digitalWrite(R_direction,LOW);  
       digitalWrite(L_direction,LOW);
@@ -294,11 +367,71 @@ void SMR_shache(){
       count_first_quick_left_trun = false  ; 
       delay(100) ; 
 
+
+      //20211211 caesar   修正SMR 刹車之後 卡住不動 
+      digitalWrite(R_direction,LOW);  
+       digitalWrite(L_direction,LOW);
+       analogWrite(RightWheel_Pin,0);                  //right_motor_speed
+       analogWrite(LeftWheel_Pin,left_motor_speed+6);    //left_motor_speed
+       delay(150);
+       
+
+      //digitalWrite(LED_3,LOW)  ; //20211211 caesar 
   }
+
+  else{
+
+  motorcontrol() ; 
+
+  }
+}
+
+
+// 20211210 caesar 
+
+void SML_shache(){
+
+
+if(counterRR >=11){
+
+  count_hard_left_turn = true ; 
+
+}
+
+if(count_hard_left_turn ==true){
+
+  digitalWrite(R_direction,LOW) ; 
+  digitalWrite(L_direction,LOW) ; 
+  analogWrite(RightWheel_Pin, 0 ) ; 
+  analogWrite(LeftWheel_Pin,0) ; 
+  count_hard_left_turn = false ; 
+
+
+}
+else{
+
+  motorcontrol() ; 
+
+
+}
+
+
+
+
+}
+
+
+void All_white(){
+
+if(true){
+
+
+
+
+}
 
 else{
 
-motorcontrol() ; 
 
 
 
@@ -308,6 +441,9 @@ motorcontrol() ;
 
 
 }
+
+
+
 
 //----------避障------------------------
 /*long cm(int trig, int echo) 
@@ -381,7 +517,7 @@ void SC()
       motorcontrol();
       break;
     case 2:/*SML*/
-       motorcontrol();
+       SML_shache() ;  //20211211 caesar
       break;
     case 8: /*SMR*/
        SMR_shache() ;   // 20211210 caesar
@@ -419,6 +555,10 @@ void SC()
     case 31:
       Black();
       break;
+    
+    case 16:  //修正SR 出彎停住    20211211 caesar 
+      //motorcontrol() ; 
+      break ; 
   }
 }
 
@@ -450,12 +590,19 @@ pinMode(A4,INPUT);
 
 pinMode(trig, OUTPUT);
 pinMode(echo, INPUT);
+
+
+pinMode(LED_ON ,OUTPUT);  //20211211 caesar
 }
 
 void loop() 
 {
+  
+
   IRAD();
   calculate_pid();
+
+  
 
   
   IRstatus = 0;
@@ -473,6 +620,8 @@ void loop()
 
     if(SR == 1)
       IRstatus= IRstatus + 16;
+
+
 
   SC();
 
