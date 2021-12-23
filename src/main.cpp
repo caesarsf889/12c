@@ -9,7 +9,7 @@ int trig = 13 , echo = 12;
 float Kp=13,Ki=0.06,Kd=2;
 float error=0, P=0, I=0, D=0, PID_value=0;
 float previous_error=0, previous_I=0;
-int initial_motor_speed=72;
+int initial_motor_speed=72; //72
 float right_motor_speed;
 float left_motor_speed;
 //-------PID--------
@@ -26,13 +26,19 @@ int SR;
 int counterLL=0;
 int counterRR=0;  
 int counterBB=0; //看到全黑
+int count_qiang_zhi_T = 0 ; //數轉彎
+
 
 
 int  LED_ON = 9 ; 
 
 bool count_first_quick_left_trun =  false  ; 
 bool count_hard_left_turn = false ;
-bool forward_check = true  ; 
+int forward_check = 0  ; 
+int after_forward_check = 0 ; 
+
+bool forward_using  = true ; 
+
 void SML_shache() ; 
 
 void All_white() ; 
@@ -119,8 +125,9 @@ void Black()
 {
   //digitalWrite(LED_ON,HIGH) ;
   counterBB += 1;
-  if(counterBB == 3)
-  {digitalWrite(R_direction,LOW);  
+  if(counterBB == 3){
+  digitalWrite(LED_ON,HIGH) ; 
+  digitalWrite(R_direction,LOW);  
   digitalWrite(L_direction,LOW);
   analogWrite(RightWheel_Pin,right_motor_speed);  //right_motor_speed
   analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
@@ -131,6 +138,7 @@ void Black()
      if(mid > 40)
        break;  
    }
+   digitalWrite(LED_ON,LOW) ; 
    }
 
   
@@ -162,25 +170,64 @@ void Black()
 
 void TurnLeft()
 {
-  digitalWrite(LED_ON,HIGH) ;   //20211211 caesar
+  //digitalWrite(LED_ON,HIGH) ;   //20211211 caesar
   counterLL += 1;
   delay(100) ; 
   int M = analogRead(A2);
   int L = analogRead(A3);
-  if(M > 40)       // 前面有路  
+  if(M > 40)       // 前面有路    caesar 20211215 
   {
-    Forward();
+    if(counterLL<7){
+      Forward();
+      
+    }
+    else if(counterLL>=7){
+
+    digitalWrite(R_direction,LOW);  
+    digitalWrite(L_direction,LOW);
+    analogWrite(RightWheel_Pin,right_motor_speed+9);  //right_motor_speed
+    analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
+    delay(150);    // boost delay  20211209     xin 
+      while(1)
+       {
+        int mid = analogRead(A2);
+        if(mid > 40)
+        break;  
+        }
+      }
+
+     
+    
+    
   }
+
   else if(L > 40)   // 前面有路 
   {
     Forward();
   }
 
-  // 修正閃燈但無快速左轉  20211211 caesar
+  // 修正閃燈但無快速左轉  20211211 caesar  
+  // 發現閃燈但不左轉是左轉被關閉掉   20211215 caesar
+  //下面這個條件並未被使用到        
   else if(counterRR >=9){
 
-    count_hard_left_turn = true ; 
+  
 
+   // count_hard_left_turn = true ; 
+  digitalWrite(R_direction,LOW);  
+  digitalWrite(L_direction,LOW);
+  analogWrite(RightWheel_Pin,right_motor_speed+5);  //right_motor_speed
+  analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
+  delay(150);    // boost delay  20211209     xin 
+   while(1)
+   {
+     int mid = analogRead(A2);
+     if(mid > 40)
+       break;  
+   }
+
+  
+  
 
   }
   else if(count_hard_left_turn ==true){
@@ -217,7 +264,7 @@ void TurnLeft()
 
   digitalWrite(R_direction,LOW);  
   digitalWrite(L_direction,LOW);
-  analogWrite(RightWheel_Pin,right_motor_speed);  //right_motor_speed
+  analogWrite(RightWheel_Pin,right_motor_speed+5);  //right_motor_speed
   analogWrite(LeftWheel_Pin,0);                   //left_motor_speed
   delay(150);    // boost delay  20211209     xin 
    while(1)
@@ -227,8 +274,8 @@ void TurnLeft()
        break;  
    }
   }
- digitalWrite(LED_ON,LOW) ;
 
+  //digitalWrite(LED_ON,LOW) ;
 }
 
 void TurnRight()
@@ -269,12 +316,13 @@ void TurnRight()
 //Problem 20211211 caesar  counterRR 失效 要忽略的直接進行右轉
 
   counterRR += 1;
-  if(  counterLL >=4  && counterRR>5 && forward_check==true)   //原版xin 的counterRR 是7  20211211 caesar
+  if(  counterLL >=4  && counterRR>=5 && forward_check==0)   //原版xin 的counterRR 是7  20211211 caesar
     {
     digitalWrite(LED_ON,HIGH) ;   
     Forward();
     delay(100);
-    forward_check = false  ;
+    forward_check += 1  ;
+    after_forward_check +=1 ; 
     digitalWrite(LED_ON,LOW) ; 
     }
 /*
@@ -316,7 +364,7 @@ void TurnRight()
            break;  
                }
 
-               //digitalWrite(LED_ON,LOW) ;   //20211211 caesar 
+     // digitalWrite(LED_ON,LOW) ;   //20211211 caesar 
   }
      }
 
@@ -344,17 +392,68 @@ void quickRight()
 {
   digitalWrite(R_direction,HIGH);  
   digitalWrite(L_direction,LOW);
-  analogWrite(RightWheel_Pin,right_motor_speed);  //right_motor_speed
-  analogWrite(LeftWheel_Pin,50);                   //left_motor_speed
-  delay(1000);
+  analogWrite(RightWheel_Pin,60);  //right_motor_speed
+  analogWrite(LeftWheel_Pin,left_motor_speed);                   //left_motor_speed
+  delay(500);
+   while(1)
+  {
+    int M = analogRead(A2);
+    if(M > 40)
+      break;
+  }
 }
 
 // add the shache using only SMR  20211209 caesar
 //The code below is using for picture C  first ban_yuan 
 
 
+void count_qiang_zhi_TT(){
+
+if(after_forward_check<2){
+
+  count_qiang_zhi_T += 1 ; 
+
+
+}
+
+if(count_qiang_zhi_T==2 && after_forward_check==2){
+
+      //強制執行右轉 （在第二個全黑BB）
+  
+       digitalWrite(R_direction,LOW);  
+       digitalWrite(L_direction,LOW);
+       analogWrite(RightWheel_Pin,0);                  //right_motor_speed
+       
+       //出灣卡住
+       analogWrite(LeftWheel_Pin,left_motor_speed+5);    //left_motor_speed 
+       delay(150);
+       while(1){
+         int mid = analogRead(A2);
+         if(mid > 40)
+           break;  
+               }
+
+  after_forward_check += 1 ; 
+}
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
 void SMR_shache(){
 
+  //digitalWrite(LED_ON,HIGH) ; 
   // if 快速左轉有跑 
   if(count_first_quick_left_trun== true){ 
 
@@ -368,15 +467,32 @@ void SMR_shache(){
       delay(100) ; 
 
 
+      digitalWrite(R_direction,LOW);
+      digitalWrite(L_direction,LOW);
+      analogWrite(RightWheel_Pin,0);
+      analogWrite(LeftWheel_Pin,80);
+      delay(700); //500
+    
+      digitalWrite(R_direction,LOW);
+      digitalWrite(L_direction,LOW);
+      analogWrite(RightWheel_Pin,85); //85
+      analogWrite(LeftWheel_Pin,45);
+      while(1)
+      {
+        int R = analogRead(A2);
+        if(R > 40)
+        break;
+      }
+
       //20211211 caesar   修正SMR 刹車之後 卡住不動 
-      digitalWrite(R_direction,LOW);  
-       digitalWrite(L_direction,LOW);
-       analogWrite(RightWheel_Pin,0);                  //right_motor_speed
-       analogWrite(LeftWheel_Pin,left_motor_speed+6);    //left_motor_speed
-       delay(150);
+      //digitalWrite(R_direction,LOW);  
+      //digitalWrite(L_direction,LOW);
+      //analogWrite(RightWheel_Pin,0);                  //right_motor_speed
+      //analogWrite(LeftWheel_Pin,left_motor_speed+6);    //left_motor_speed
+      //delay(150);
        
 
-      //digitalWrite(LED_3,LOW)  ; //20211211 caesar 
+      // digitalWrite(LED_ON,LOW)  ;//20211211 caesar 
   }
 
   else{
@@ -384,6 +500,7 @@ void SMR_shache(){
   motorcontrol() ; 
 
   }
+  
 }
 
 
@@ -392,7 +509,7 @@ void SMR_shache(){
 void SML_shache(){
 
 
-if(counterRR >=11){
+if(counterRR >=11  ){
 
   count_hard_left_turn = true ; 
 
@@ -421,26 +538,9 @@ else{
 }
 
 
-void All_white(){
-
-if(true){
 
 
 
-
-}
-
-else{
-
-
-
-
-
-}
-
-
-
-}
 
 
 
@@ -517,7 +617,8 @@ void SC()
       motorcontrol();
       break;
     case 2:/*SML*/
-       SML_shache() ;  //20211211 caesar
+       //SML_shache() ;  //20211211 caesar
+       motorcontrol() ; 
       break;
     case 8: /*SMR*/
        SMR_shache() ;   // 20211210 caesar
@@ -530,21 +631,27 @@ void SC()
       break;
     case 7: /*SM+SML+SL*/  
       TurnLeft();
+      count_qiang_zhi_TT() ; 
       break;
    case 15: /*SMR+SM+SML+SL*/
     TurnLeft();
+    count_qiang_zhi_TT() ; 
       break;
     case 3: /*SML+SL*/
     TurnLeft();
+    //count_qiang_zhi_TT() ; 
       break;
     case 30: /*SML+SM+SMR+SR*/
      TurnRight();
+     count_qiang_zhi_TT() ; 
       break;
     case 28: //SM+SMR+SR
       TurnRight();
+      count_qiang_zhi_TT() ; 
       break;
     case 24: //SMR+SR
       TurnRight();
+      //count_qiang_zhi_TT() ; 
       break;
     case 5:  //圖C銳角
       quickLeft();
